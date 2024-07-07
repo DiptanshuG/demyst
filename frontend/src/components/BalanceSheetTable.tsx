@@ -1,27 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { fetchBalanceSheet } from '../services/api';
 
-interface BalanceSheet {
-  assets: {
-    currentAssets: number;
-    nonCurrentAssets: number;
-  };
-  liabilities: {
-    currentLiabilities: number;
-    nonCurrentLiabilities: number;
-  };
-  equity: {
-    ownersEquity: number;
-  };
+interface BalanceSheetRow {
+  RowType: string;
+  Title?: string;
+  Cells?: { Value: string }[];
+  Rows?: BalanceSheetRow[];
+}
+
+interface BalanceSheetReport {
+  ReportID: string;
+  ReportName: string;
+  Rows: BalanceSheetRow[];
 }
 
 const BalanceSheetTable: React.FC = () => {
-  const [balanceSheet, setBalanceSheet] = useState<BalanceSheet | null>(null);
+  const [balanceSheet, setBalanceSheet] = useState<BalanceSheetReport | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchBalanceSheet()
-      .then(setBalanceSheet)
+    fetchBalanceSheet({ date: '2023-06-30', periods: 1, timeframe: 'MONTH' })
+      .then(data => {
+        setBalanceSheet(data.Reports[0]);
+      })
       .catch(error => setError(error.message));
   }, []);
 
@@ -33,35 +34,44 @@ const BalanceSheetTable: React.FC = () => {
     return <div>Loading...</div>;
   }
 
+  const renderRows = (rows: BalanceSheetRow[]) => {
+    return rows.map((row, index) => {
+      if (row.RowType === 'Section') {
+        return (
+          <tr key={index}>
+            <th colSpan={3}>{row.Title}</th>
+          </tr>
+        );
+      } else if (row.RowType === 'Row' || row.RowType === 'SummaryRow') {
+        return (
+          <tr key={index}>
+            {row.Cells?.map((cell, cellIndex) => (
+              <td key={cellIndex}>{cell.Value}</td>
+            ))}
+          </tr>
+        );
+      } else if (row.Rows) {
+        return (
+          <React.Fragment key={index}>
+            {renderRows(row.Rows)}
+          </React.Fragment>
+        );
+      }
+      return null;
+    });
+  };
+
   return (
     <table>
       <thead>
         <tr>
           <th>Category</th>
-          <th>Amount</th>
+          <th>Value (Current Period)</th>
+          <th>Value (Previous Period)</th>
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>Current Assets</td>
-          <td>{balanceSheet.assets.currentAssets}</td>
-        </tr>
-        <tr>
-          <td>Non-Current Assets</td>
-          <td>{balanceSheet.assets.nonCurrentAssets}</td>
-        </tr>
-        <tr>
-          <td>Current Liabilities</td>
-          <td>{balanceSheet.liabilities.currentLiabilities}</td>
-        </tr>
-        <tr>
-          <td>Non-Current Liabilities</td>
-          <td>{balanceSheet.liabilities.nonCurrentLiabilities}</td>
-        </tr>
-        <tr>
-          <td>Owner's Equity</td>
-          <td>{balanceSheet.equity.ownersEquity}</td>
-        </tr>
+        {renderRows(balanceSheet.Rows)}
       </tbody>
     </table>
   );

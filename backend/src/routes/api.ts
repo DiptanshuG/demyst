@@ -1,27 +1,36 @@
 import express from 'express';
+import axios from 'axios';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const router = express.Router();
 
-router.get('/balance-sheet', (req, res) => {
+const xeroApiUrl = 'https://api.xero.com/api.xro/2.0/Reports/BalanceSheet';
+
+router.get('/balance-sheet', async (req, res) => {
+  const { date, periods, timeframe, trackingOptionID1, trackingOptionID2, standardLayout, paymentsOnly } = req.query;
+
   try {
-    const mockData = {
-      assets: {
-        currentAssets: 1000,
-        nonCurrentAssets: 5000,
+    const response = await axios.get(xeroApiUrl, {
+      headers: {
+        Authorization: `Bearer ${process.env.XERO_ACCESS_TOKEN}`,
       },
-      liabilities: {
-        currentLiabilities: 2000,
-        nonCurrentLiabilities: 3000,
+      params: {
+        date,
+        periods,
+        timeframe,
+        trackingOptionID1,
+        trackingOptionID2,
+        standardLayout,
+        paymentsOnly,
       },
-      equity: {
-        ownersEquity: 1000,
-      },
-    };
-    res.json(mockData);
+    });
+    res.json(response.data);
   } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch data from Xero API' });
   }
 });
-
 
 export default router;
