@@ -11,6 +11,6 @@ app.use(cors());
 // Route handling
 app.use("/api", apiRouter);
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Server is running on http://0.0.0.0:${port}`);
 });
