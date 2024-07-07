@@ -22,14 +22,22 @@ const BalanceSheetTable: React.FC = () => {
   const [balanceSheet, setBalanceSheet] = useState<BalanceSheetReport | null>(
     null
   );
+
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchBalanceSheet()
-      .then((data) => {
-        setBalanceSheet(data.Reports[0]);
-      })
-      .catch((error) => setError(error.message));
+    const fetchData = async () => {
+      try {
+        const response = await fetchBalanceSheet();
+        console.log("API Response:", response);
+        setBalanceSheet(response.Reports[0]);
+      } catch (error) {
+        console.error("Error fetching balance sheet:", error);
+        setError("Error fetching data. Please try again later.");
+      }
+    };
+
+    fetchData();
   }, []);
 
   if (error) {
@@ -42,7 +50,7 @@ const BalanceSheetTable: React.FC = () => {
 
   const renderRows = (rows: BalanceSheetRow[], depth = 0) => {
     return rows.map((row, index) => {
-      const indentStyle = `pl-${depth * 5}`; // Tailwind padding-left classes for indentation
+      const indentStyle = `pl-${depth * 5}`;
 
       if (row.RowType === "Section") {
         return (
