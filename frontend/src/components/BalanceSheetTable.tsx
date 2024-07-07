@@ -1,10 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { fetchBalanceSheet } from '../services/api';
+import React, { useEffect, useState } from "react";
+import { fetchBalanceSheet } from "../services/api";
+
+interface BalanceSheetCell {
+  Value: string;
+}
 
 interface BalanceSheetRow {
-  RowType: string;
+  RowType: "Header" | "Section" | "Row" | "SummaryRow";
   Title?: string;
-  Cells?: { Value: string }[];
+  Cells?: BalanceSheetCell[];
   Rows?: BalanceSheetRow[];
 }
 
@@ -15,15 +19,18 @@ interface BalanceSheetReport {
 }
 
 const BalanceSheetTable: React.FC = () => {
-  const [balanceSheet, setBalanceSheet] = useState<BalanceSheetReport | null>(null);
+  const [balanceSheet, setBalanceSheet] = useState<BalanceSheetReport | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
-
+  console.log({ balanceSheet });
   useEffect(() => {
-    fetchBalanceSheet({ date: '2023-06-30', periods: 1, timeframe: 'MONTH' })
-      .then(data => {
+    fetchBalanceSheet()
+      .then((data) => {
+        console.log({ data }); // Check console output for data structure
         setBalanceSheet(data.Reports[0]);
       })
-      .catch(error => setError(error.message));
+      .catch((error) => setError(error.message));
   }, []);
 
   if (error) {
@@ -36,13 +43,13 @@ const BalanceSheetTable: React.FC = () => {
 
   const renderRows = (rows: BalanceSheetRow[]) => {
     return rows.map((row, index) => {
-      if (row.RowType === 'Section') {
+      if (row.RowType === "Section") {
         return (
           <tr key={index}>
             <th colSpan={3}>{row.Title}</th>
           </tr>
         );
-      } else if (row.RowType === 'Row' || row.RowType === 'SummaryRow') {
+      } else if (row.RowType === "Row" || row.RowType === "SummaryRow") {
         return (
           <tr key={index}>
             {row.Cells?.map((cell, cellIndex) => (
@@ -52,9 +59,7 @@ const BalanceSheetTable: React.FC = () => {
         );
       } else if (row.Rows) {
         return (
-          <React.Fragment key={index}>
-            {renderRows(row.Rows)}
-          </React.Fragment>
+          <React.Fragment key={index}>{renderRows(row.Rows)}</React.Fragment>
         );
       }
       return null;
@@ -70,9 +75,7 @@ const BalanceSheetTable: React.FC = () => {
           <th>Value (Previous Period)</th>
         </tr>
       </thead>
-      <tbody>
-        {renderRows(balanceSheet.Rows)}
-      </tbody>
+      <tbody>{renderRows(balanceSheet.Rows)}</tbody>
     </table>
   );
 };
